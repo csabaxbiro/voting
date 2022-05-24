@@ -11,9 +11,14 @@ from collections import Counter
 class BallotBox:
 
   def __init__(self,candidates):
+    mc=Counter(candidates).most_common(1)
+    if mc[0][1]!=1: raise Exception("Invalid list of candidates: "+candidates+". Candidate "+mc[0][0]+" appears "+str(mc[0][1])+" times.")
     self.__candidates=candidates;
     self.__data={}
     
+  def __str__(self):
+    return self.__candidates+"; "+self.__data.__str__()
+
   def size(self):
     return len(self.__data)
     
@@ -24,20 +29,18 @@ class BallotBox:
     return self.__data.keys()
     
   def vote(self,ranking,mult=1):
+    #logging.debug("Voting: "+ranking+" x "+str(mult))
     c=Counter(ranking);
     mc=c.most_common(1);
-    if mc[0][1]!=1: sys.exit("Invalid ballot: "+ranking+". Candidate "+mc[0][0]+" appears "+mc[0][1]+" times.")
-    if not set(c).issubset(self.__candidates): sys.exit("Invalid ballot: "+ranking+". A candidate is not on the list ("+self.__candidates+")")  
+    if mc[0][1]!=1: raise Exception("Invalid ballot: "+ranking+". Candidate "+mc[0][0]+" appears "+str(mc[0][1])+" times.")
+    if not set(c).issubset(self.__candidates): raise Exception("Invalid ballot: "+ranking+". A candidate is not on the list ("+self.__candidates+")")  
     prev=self.__data.get(ranking,0)
     self.__data[ranking]=prev+mult
     
-  def __str__(self):
-    return self.__data.__str__()
-
   def countTop(self):
     result=dict.fromkeys(self.__candidates,0)
     for i in self.__data: result[i[0]]+=self.__data[i]
-    logging.debug("CountTop returns with "+str(result))
+    logging.debug("countTop() returns with "+str(result))
     return result
 
   def pluralityWinner(self):
@@ -50,7 +53,7 @@ class BallotBox:
     
   def removeLoser(self):
     """This function removes the candidate with the fewest number of top votes."""
-    if not self.__candidates: raise Excpetion()
+    if not self.__candidates: raise Excpetion("Candidate list is empty")
     loser=self.pluralityLoser()
     logging.debug("Removing "+loser)
     self.__candidates=self.__candidates.replace(loser,"")
@@ -58,8 +61,7 @@ class BallotBox:
     for i in datacopy:
       newranking=i.replace(loser,"")
       if (newranking): self.vote(newranking,datacopy[i])
-    logging.debug("New candidate list: "+str(self.__candidates))
-    logging.debug("New ballot box: "+str(self.__data))
+    logging.debug("New ballot box: "+str(self))
       
   def sequentialRunoff(self,candidates=1):
     BB=self
